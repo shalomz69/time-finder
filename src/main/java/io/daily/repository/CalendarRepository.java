@@ -8,17 +8,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class CalendarRepository {
-    private final ConcurrentMap<String, CopyOnWriteArraySet<Event>> eventsByPerson
-            = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<Event>> eventsByPerson = new ConcurrentHashMap<>();
 
     public void addEvent(Event e) {
-        eventsByPerson
-                .computeIfAbsent(e.getPersonName(), k -> new CopyOnWriteArraySet<>())
+        eventsByPerson.computeIfAbsent(e.getPersonName(), k -> ConcurrentHashMap.newKeySet())
                 .add(e);
     }
 
     public Set<Event> getEventsFor(String person) {
-        return eventsByPerson
-                .getOrDefault(person, new CopyOnWriteArraySet<>());
+        return Collections.unmodifiableSet(
+                eventsByPerson.getOrDefault(person, Collections.emptySet()));
     }
 }

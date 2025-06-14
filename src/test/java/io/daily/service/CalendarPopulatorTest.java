@@ -20,33 +20,28 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CalendarPopulatorTest {
-    public static final String EVENTS_CSV = "src/test/resources/io/daily/events.csv";
+    private static final String EVENTS_CSV = "src/test/resources/io/daily/events.csv";
+    private static final String JOHN_DOE = "John Doe";
+    private static final Event EVENT_1 = new Event(JOHN_DOE,
+            "Lunch",
+            LocalTime.parse("12:00"),
+            LocalTime.parse("13:00"));
+    private static final Event EVENT_2 = new Event(JOHN_DOE,
+            "Daily",
+            LocalTime.parse("18:00"),
+            LocalTime.parse("19:00"));
+    private static final Event EVENT_3 = new Event("Jane Crowley",
+            "Meeting",
+            LocalTime.parse("14:00"),
+            LocalTime.parse("15:00"));
+    private static final Set<Event> JOHNS_EVENTS = Set.of(EVENT_1, EVENT_2);
+    private static final Set<Event> JANES_EVENTS = Set.of(EVENT_3);
     @Mock
     private FileParser<Event> fileParser;
     @Mock
     private CalendarRepository repository;
     @InjectMocks
     private CalendarPopulator populator;
-
-    private static final String JOHN_DOE = "John Doe";
-
-    private static final Event EVENT_1 = new Event(JOHN_DOE,
-            "Lunch",
-            LocalTime.parse("12:00"),
-            LocalTime.parse("13:00"));
-
-    private static final Event EVENT_2 = new Event(JOHN_DOE,
-            "Daily",
-            LocalTime.parse("18:00"),
-            LocalTime.parse("19:00"));
-
-    private static final Event EVENT_3 = new Event("Jane Crowley",
-            "Meeting",
-            LocalTime.parse("14:00"),
-            LocalTime.parse("15:00"));
-
-    private static final Set<Event> JOHNS_EVENTS = Set.of(EVENT_1, EVENT_2);
-    private static final Set<Event> JANES_EVENTS = Set.of(EVENT_3);
 
     @Before
     public void setUp() throws FileNotFoundException {
@@ -55,6 +50,7 @@ public class CalendarPopulatorTest {
                         .flatMap(Set::stream)
                         .collect(Collectors.toList()));
     }
+
     @Test
     public void testPopulateEvents() throws FileNotFoundException {
         populator.populateEvents(EVENTS_CSV);

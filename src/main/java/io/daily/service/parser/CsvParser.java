@@ -19,7 +19,6 @@ public class CsvParser<T> implements FileParser<T> {
         final CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(new FileReader(csvFile))
                 .withMappingStrategy(strategy)
                 .withIgnoreLeadingWhiteSpace(true)
-                .withSeparator(',')
                 .withSkipLines(0)
                 .build();
         return csvToBean.parse();

@@ -38,5 +38,4 @@ public class App {
             System.err.println("An error occurred while processing the calendar: " + ex.getMessage());
         }
     }
-
 }

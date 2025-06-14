@@ -20,13 +20,14 @@ public class CalendarRepositoryTest {
             "Meeting",
             LocalTime.parse("14:00"),
             LocalTime.parse("15:00"));
+
     @Test
     public void testAddEvent() {
-        CalendarRepository repository = new CalendarRepository();
+        final CalendarRepository repository = new CalendarRepository();
         repository.addEvent(EVENT_1);
         repository.addEvent(EVENT_2);
 
-        Set<Event> events = repository.getEventsFor("John Doe");
+        final Set<Event> events = repository.getEventsFor("John Doe");
         assert events.contains(EVENT_1);
     }
 
@@ -36,7 +37,6 @@ public class CalendarRepositoryTest {
         repository.addEvent(EVENT_1);
         repository.addEvent(EVENT_2);
         repository.addEvent(EVENT_3);
-
 
 
         Set<Event> events = repository.getEventsFor("John Doe");

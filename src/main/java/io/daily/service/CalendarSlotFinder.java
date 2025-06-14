@@ -10,64 +10,76 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CalendarSlotFinder {
+    private static final LocalTime WORK_DAY_START = LocalTime.of(7, 0);
+    private static final LocalTime WORK_DAY_END = LocalTime.of(19, 0);
+    private static final EventSpan END_OF_DAY_SENTINEL = new EventSpan(WORK_DAY_END, WORK_DAY_END);
     private final CalendarRepository calendarRepository;
-
-    private static final LocalTime START = LocalTime.parse("07:00");
-    private static final LocalTime END = LocalTime.parse("19:00");
+    private static final int SLOT_GRANULARITY_MINUTES = 15;
+    private static final Duration MAX_DURATION = Duration.ofHours(3);
+    private static final Duration MIN_DURATION = Duration.ofMinutes(5);
 
     public CalendarSlotFinder(CalendarRepository calendarRepository) {
         this.calendarRepository = calendarRepository;
     }
 
     public List<LocalTime> findAvailableSlots(List<String> persons, Duration eventDuration) {
-        if (persons == null || persons.isEmpty()) {
-            throw new IllegalArgumentException("Must specify at least one existing person");
-        }
-        if (eventDuration == null || eventDuration.isNegative() || eventDuration.isZero()) {
-            throw new IllegalArgumentException("Invalid duration");
-        }
-        final var eventsSpans =  buildEvents(persons);
-        System.out.println("event spans: " + eventsSpans);
-        return buildAvailableSlots(eventsSpans, eventDuration);
+        validateInput(persons, eventDuration);
+        final Set<EventSpan> occupiedSpans = buildOccupiedEventSpans(persons);
+
+        System.out.println("Occupied spans: " + occupiedSpans);
+        return buildAvailableSlots(occupiedSpans, eventDuration);
     }
 
-    private Set<EventSpan> buildEvents(List<String> persons) {
-        Set<EventSpan> spans =  persons.stream()
+    private void validateInput(List<String> persons, Duration duration) {
+        if (persons == null || persons.isEmpty()) {
+            throw new IllegalArgumentException("At least one person must be specified");
+        }
+        if (duration == null || duration.compareTo(MIN_DURATION) < 0 || duration.compareTo(MAX_DURATION) > 0) {
+            throw new IllegalArgumentException("Duration must be between 5 minutes and 3 hours");
+        }
+    }
+
+    private Set<EventSpan> buildOccupiedEventSpans(List<String> persons) {
+        return persons.stream()
                 .map(calendarRepository::getEventsFor)
                 .peek(events -> System.out.println("Existing events: " + events))
                 .flatMap(Collection::stream)
-                .map(this::buildEventSpan)
-                .collect(Collectors.toCollection(() ->
-                        new TreeSet<>(Comparator.comparing(EventSpan::startTime)
-                                .thenComparing(EventSpan::endTime))));
-        spans.add(addEndLimit());
-        return Collections.unmodifiableSet(spans);
+                .map(this::toEventSpan)
+                .collect(Collectors.toCollection(() -> {
+                    TreeSet<EventSpan> sortedSpans = new TreeSet<>();
+                    sortedSpans.add(END_OF_DAY_SENTINEL);
+                    return sortedSpans;
+                }));
     }
 
-    private EventSpan buildEventSpan(Event event) {
+    private EventSpan toEventSpan(Event event) {
         return new EventSpan(event.getStartTime(), event.getEndTime());
     }
 
-    private EventSpan addEndLimit() {
-        return new EventSpan(END, END);
-    }
-
-    private List<LocalTime> buildAvailableSlots(Set<EventSpan> events, Duration eventDuration){
+    private List<LocalTime> buildAvailableSlots(Set<EventSpan> events, Duration eventDuration) {
         final List<LocalTime> availableSlots = new ArrayList<>();
-        LocalTime currentEnd = START;
+        LocalTime currentTime = WORK_DAY_START;
+
         for (EventSpan eventSpan : events) {
-            LocalTime start = eventSpan.startTime();
-            if (currentEnd.getMinute() > 0) {
-                currentEnd = currentEnd.plusHours(1).withMinute(0);
+            LocalTime nextBusyStart = eventSpan.startTime();
+            currentTime = alignToNextGranularity(currentTime);
+
+            while (!currentTime.plus(eventDuration).isAfter(nextBusyStart)) {
+                availableSlots.add(currentTime);
+                currentTime = currentTime.plusMinutes(SLOT_GRANULARITY_MINUTES);
             }
-            while(Duration.between(currentEnd, start).compareTo(eventDuration) >= 0) {
-                availableSlots.add(currentEnd);
-                currentEnd = currentEnd.plus(eventDuration);
-            }
-            if (eventSpan.endTime().isAfter(currentEnd)) {
-                currentEnd = eventSpan.endTime();
+            if (eventSpan.endTime().isAfter(currentTime)) {
+                currentTime = eventSpan.endTime();
             }
         }
         return availableSlots;
     }
+
+    private LocalTime alignToNextGranularity(LocalTime time) {
+        final int minute = time.getMinute();
+        final int remainder = minute % SLOT_GRANULARITY_MINUTES;
+        if (remainder == 0) return time;
+        return time.plusMinutes(SLOT_GRANULARITY_MINUTES - remainder);
+    }
 }
+

@@ -9,11 +9,10 @@ public class LocalTimeConverterTest {
 
     @Test
     public void testConvert() {
-        LocalTimeConverter converter = new LocalTimeConverter();
-        String timeString = "12:30";
-        LocalTime time = (LocalTime) converter.convert(timeString);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        final LocalTimeConverter converter = new LocalTimeConverter();
+        final String timeString = "12:30";
+        final LocalTime time = (LocalTime) converter.convert(timeString);
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         assert time.format(formatter).equals(timeString);
     }
 }

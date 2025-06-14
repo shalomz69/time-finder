@@ -10,7 +10,8 @@ public class CalendarPopulator {
     private final FileParser<Event> fileParser;
     private final CalendarRepository calendarRepository;
 
-    public CalendarPopulator(FileParser<Event> fileParser, CalendarRepository calendarRepository){
+    public CalendarPopulator(FileParser<Event> fileParser,
+                             CalendarRepository calendarRepository) {
         this.fileParser = fileParser;
         this.calendarRepository = calendarRepository;
     }
